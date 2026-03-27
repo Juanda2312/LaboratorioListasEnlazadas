@@ -6,9 +6,9 @@ public class HistorialWeb {
 
     public void visit(String url) {
         pages.addLast(url);
-        // Se recrea el iterador apuntando al último nodo visitado
+
         it = pages.iterator();
-        // Avanzar hasta el último elemento
+
         int i = 0;
         while (i < pages.getSize() - 1) {
             it.next();

@@ -1,28 +1,28 @@
-package co.edu.uniquindio.panaderia;
-
+package co.edu.uniquindio.reproductor;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
+public class CircularSimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
 
     private Node<T> first;
+    private Node<T> last;
     private int size;
 
-
-    public SimpleLinkedList() {
+    public CircularSimpleLinkedList() {
         first = null;
+        last = null;
         size = 0;
-    }
-
-    public T getfirst(){
-        return first.getData();
     }
 
     public void addFirst(T data){
         Node<T> newNode = new Node<>(data);
         if (!isEmpty()) {
             newNode.setNext(first);
+            last.setNext(newNode);
+        }else{
+            last = newNode;
+            newNode.setNext(newNode);
         }
         first = newNode;
         size++;
@@ -32,19 +32,19 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
         Node<T> newNode = new Node<>(data);
         if (isEmpty()){
             first = newNode;
+            last = newNode;
+            newNode.setNext(newNode);
         }else {
-            Node<T> aux = first;
-            while (aux.getNext() != null) {
-                aux = aux.getNext();
-            }
-            aux.setNext(newNode);
+            last.setNext(newNode);
+            newNode.setNext(first);
+            last = newNode;
         }
         size++;
     }
 
     public void add(T data, int i){
-        if (i < 0 || i> size) throw new IndexOutOfBoundsException("Invalid index");
-        if (isEmpty()|| i == 0) {
+        if (i < 0 || i > size) throw new IndexOutOfBoundsException("Invalid index");
+        if (isEmpty() || i == 0) {
             addFirst(data);
             return;
         } else if (i == size) {
@@ -54,7 +54,7 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
 
         Node<T> aux = first;
         int j = 0;
-        while (j < i-1){
+        while (j < i - 1){
             j++;
             aux = aux.getNext();
         }
@@ -65,41 +65,47 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
     }
 
     public void removeFirst(){
-        if (isEmpty())throw new RuntimeException("List is empty");
-        Node<T> next = first.getNext();
-        first.setNext(null);
-        first = next;
+        if (isEmpty()) throw new RuntimeException("List is empty");
+        if (size == 1){
+            first = null;
+            last = null;
+        } else {
+            first = first.getNext();
+            last.setNext(first);
+        }
         size--;
     }
 
     public void removeLast(){
-        if (isEmpty())throw new RuntimeException("List is empty");
-        if (first.getNext() == null ){
+        if (isEmpty()) throw new RuntimeException("List is empty");
+        if (size == 1){
             first = null;
+            last = null;
         }else{
             Node<T> aux = first;
-            while (aux.getNext().getNext() != null){
+            while (aux.getNext() != last){
                 aux = aux.getNext();
             }
-            aux.setNext(null);
+            aux.setNext(first);
+            last = aux;
         }
         size--;
     }
 
     public void remove(int i){
-        if (isEmpty())throw new RuntimeException("List is empty");
+        if (isEmpty()) throw new RuntimeException("List is empty");
         if (i < 0 || i >= size) throw new IndexOutOfBoundsException("Invalid index");
-        if(i == 0) {
+        if (i == 0) {
             removeFirst();
             return;
-        } else if (i == size-1) {
+        } else if (i == size - 1) {
             removeLast();
             return;
         }
 
         int j = 0;
         Node<T> aux = first;
-        while (j < i-1){
+        while (j < i - 1){
             j++;
             aux = aux.getNext();
         }
@@ -110,12 +116,43 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
         size--;
     }
 
+    public void remove(T data) {
+        if (isEmpty()) throw new RuntimeException("List is empty");
+
+        if (first.getData().equals(data)) {
+            if (first == last) {
+                first = null;
+                last = null;
+            } else {
+                first = first.getNext();
+                last.setNext(first);
+            }
+            size--;
+            return;
+        }
+
+        Node<T> aux = first;
+        while (aux.getNext() != first) {
+            if (aux.getNext().getData().equals(data)) {
+                if (aux.getNext() == last) {
+                    last = aux;
+                }
+                aux.setNext(aux.getNext().getNext());
+                size--;
+                return;
+            }
+            aux = aux.getNext();
+        }
+
+        throw new NoSuchElementException("No se encontró: " + data);
+    }
+
     public T get(int i){
         return getNode(i).getData();
     }
 
     public Node<T> getNode(int i){
-        if (isEmpty())throw new RuntimeException("List is empty");
+        if (isEmpty()) throw new RuntimeException("List is empty");
         if (i < 0 || i >= size) throw new IndexOutOfBoundsException("Invalid index");
 
         Node<T> aux = first;
@@ -147,15 +184,15 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
         if (isEmpty()) return;
         StringBuilder s = new StringBuilder();
         Node<T> aux = first;
-        while(aux != null){
-            s.append(aux);
+        for (int i = 0; i < size; i++){
+            s.append(aux.toString());
             aux = aux.getNext();
         }
         System.out.println(s);
     }
 
     public void sort(){
-        if (isEmpty() || size == 1)return;
+        if (isEmpty() || size == 1) return;
 
         boolean swapped;
 
@@ -163,7 +200,8 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
             swapped = false;
             Node<T> current = first;
 
-            while (current.getNext() != null){
+            int count = 0;
+            while (count < size - 1){
                 if (current.getData().compareTo(current.getNext().getData()) > 0){
                     T temp = current.getData();
                     current.setData(current.getNext().getData());
@@ -172,18 +210,27 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
                     swapped = true;
                 }
                 current = current.getNext();
+                count++;
             }
-        }while (swapped);
+        } while (swapped);
     }
 
     public void removeAll(){
         first = null;
+        last = null;
         size = 0;
     }
 
+    public int getSize() {
+        return size;
+    }
+
     public void reverse(){
-        if (first == null || first.getNext() == null)return;
+        if (isEmpty() || size == 1) return;
+        last.setNext(null);
+        last = first;
         first = reverse(first);
+        last.setNext(first);
     }
 
     private Node<T> reverse(Node<T> current) {
@@ -193,23 +240,26 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
         Node<T> aux = reverse(current.getNext());
 
         current.getNext().setNext(current);
-
         current.setNext(null);
 
         return aux;
     }
 
     @Override
-    public ListIterator iterator() {
-        return new ListIterator();
+    public CircularListIterator iterator() {
+        return new CircularListIterator();
     }
 
-    public class ListIterator implements Iterator<T>{
+    public class CircularListIterator implements Iterator<T>{
 
         private Node<T> current;
 
-        public ListIterator(){
+        public CircularListIterator(){
             current = first;
+        }
+
+        public Node<T> getCurrent() {
+            return current;
         }
 
         @Override
@@ -219,12 +269,9 @@ public class SimpleLinkedList<T extends Comparable<T>> implements Iterable<T>{
 
         @Override
         public T next() {
-            if (!hasNext())throw new NoSuchElementException();
             T data = current.getData();
             current = current.getNext();
             return data;
         }
-
     }
 }
-
